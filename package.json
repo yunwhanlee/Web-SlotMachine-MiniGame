@@ -1,0 +1,15 @@
+{
+  "name": "kazino",
+  "version": "1.0.0",
+  "description": "pixiJS Sample",
+  "main": "app.js",
+  "scripts": {
+    "start": "pm2 --name index start ./bin/www.js"
+  },
+  "author": "yunwhanlee",
+  "license": "ISC",
+  "dependencies": {
+    "ejs": "^3.1.6",
+    "express": "^4.17.1"
+  }
+}
