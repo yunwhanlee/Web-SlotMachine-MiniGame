@@ -5,28 +5,32 @@ const SYMBOL_MASS_W = 96;
 const slotTileStartPosX=235, slotTileStartPosY=-278
 const slotSpeed = 15;//spd=15 & span=spd*1.7||| spd=12 & span=spd*2.6||| spd=7 & span=spd*7.8 ||| spd=6 & span=spd*5.9
 const span = slotSpeed * 1.7;
-const stopSlotDelaySpan = 100;
+const stopSlotDelaySpan = 50;
 let isPullHandle = false;
-let isSlotStop1 = false, SlotResult1 = null;
-let isSlotStop2 = false, SlotResult2 = null;
-let isSlotStop3 = false, SlotResult3 = null;
+let isSlotStop1 = false, slotResult1 = null;
+let isSlotStop2 = false, slotResult2 = null;
+let isSlotStop3 = false, slotResult3 = null;
 let isFinish = false;
 
-const AnimEnum = Object.freeze({
-	handle : {idle : 0, pull : 1},
-});
-const Symbol = Object.freeze({
-	bell : -96, cherry : 0, seven : 96, bar : 192
-});
+let bettingAmount = 10;
+let coin = 1000;
+
+const AnimEnum = Object.freeze({handle : {idle : 0, pull : 1}});
+const Symbol = Object.freeze({bell : -96, cherry : 0, seven : 96, bar : 192});
 
 //#canvas
 const app = new PIXI.Application({width: CANVAS_W, height: CANVAS_H});
 document.body.appendChild(app.view);
 
 //#sprites Enroll
+const UI = {
+	coinTxt : new PIXI.Text(`コイン：${coin}`,{fontFamily : 'Arial', fontSize: 24, fill : 0xffffff, align : 'center'}),
+	slotSymbolsImg: PIXI.Sprite.from('../img/slot-symbolsWithScore.png'),
+}
+
 const spr = {
 	// meme : PIXI.Sprite.from('../img/meme_mini.png'),
-	UI_slotSymbolsImg: PIXI.Sprite.from('../img/slot-symbols.png'),
+	
 	slotSymbolTileset : [PIXI.Sprite.from('../img/slot-symbolsBG.png'), PIXI.Sprite.from('../img/slot-symbolsBG.png'), PIXI.Sprite.from('../img/slot-symbolsBG.png')],
 	slotMachine : PIXI.Sprite.from('../img/slot-machine4.png'),
 	slotHandle: {
@@ -35,8 +39,8 @@ const spr = {
 	}
 };
 
-
-//#Render Sprites
+//#Render
+//--Sprite--
 //symbolTileSet
 for(let i=0;i<3;i++){
 	app.stage.addChild(spr.slotSymbolTileset[i]);
@@ -46,10 +50,16 @@ for(let i=0;i<3;i++){
 app.stage.addChild(spr.slotMachine);
 //machine handle
 app.stage.addChild(spr.slotHandle.obj);
-//UI
-app.stage.addChild(spr.UI_slotSymbolsImg);
-spr.UI_slotSymbolsImg.position.set(15,15);
-spr.UI_slotSymbolsImg.scale.set(0.5, 0.5);
+
+//--UI--
+//Symbol Score info
+app.stage.addChild(UI.slotSymbolsImg);
+UI.slotSymbolsImg.position.set(15,200);
+UI.slotSymbolsImg.scale.set(0.5, 0.5);
+
+//CoinTxt
+app.stage.addChild(UI.coinTxt);
+UI.coinTxt.x = 10; UI.coinTxt.y = 10;
 
 // app.stage.addChild(spr.meme);
 
@@ -64,9 +74,9 @@ function init(){
 	time = 0;
 	stopDelayTime = 0;
 	isPullHandle = false;
-	isSlotStop1 = false, SlotResult1 = null;
-	isSlotStop2 = false, SlotResult2 = null;
-	isSlotStop3 = false, SlotResult3 = null;
+	isSlotStop1 = false, slotResult1 = null;
+	isSlotStop2 = false, slotResult2 = null;
+	isSlotStop3 = false, slotResult3 = null;
 	isFinish = false;
 }
 
@@ -76,6 +86,8 @@ spr.slotMachine.buttonMode = true;
 
 spr.slotMachine.on('click', ()=> {
 	if(!isPullHandle){
+		coin -= bettingAmount;
+		UI.coinTxt.text = `コイン：${coin}`;
 		isPullHandle = true;
 		spr.slotHandle.obj.texture = spr.slotHandle.anim[AnimEnum.handle.pull];
 	}
@@ -109,22 +121,26 @@ app.ticker.add(cnt=>{
 			spr.slotSymbolTileset.forEach((slot, idx) => {
 				switch(idx){
 					case 0:
-						if(!isSlotStop1) {isSlotStop1=true; SlotResult1 = calcSlotResult(); }
-						if(stopDelayTime > stopSlotDelaySpan) slot.y = SlotResult1;
+						if(!isSlotStop1) {isSlotStop1=true; slotResult1 = calcSlotResult(); }
+						if(stopDelayTime > stopSlotDelaySpan) slot.y = slotResult1 + 16;
 						break;
 					case 1:
-						if(!isSlotStop2) {isSlotStop2=true; SlotResult2 = calcSlotResult(); }
-						if(stopDelayTime > stopSlotDelaySpan * 2) slot.y = SlotResult2;
+						if(!isSlotStop2) {isSlotStop2=true; slotResult2 = calcSlotResult(); }
+						if(stopDelayTime > stopSlotDelaySpan * 2) slot.y = slotResult2 + 16;
 						break;
 					case 2:
-						if(!isSlotStop3) {isSlotStop3=true; SlotResult3 = calcSlotResult(); }
-						if(stopDelayTime > stopSlotDelaySpan * 3) {slot.y = SlotResult3;}
+						if(!isSlotStop3) {isSlotStop3=true; slotResult3 = calcSlotResult(); }
+						if(stopDelayTime > stopSlotDelaySpan * 3) {
+							slot.y = slotResult3 + 16; 
+							result();
+						}
 						break;
 				}
 			})
 		}
 	});
 });
+
 //  let time = 0.0;
 //  app.ticker.add((cnt) => {
 //    time += cnt;
@@ -136,6 +152,36 @@ app.ticker.add(cnt=>{
 //  });
 
 //FUNCTION------------------------------------------------------------------------------------------
+function result(){
+	if(!isFinish){
+		isFinish = true;
+		let resTxt = "";
+		console.log("result : ", slotResult1, slotResult2, slotResult3);
+		if(slotResult1 === slotResult2 && slotResult2 === slotResult3 && slotResult1 === slotResult3){
+			const befCoin = coin;
+			switch(slotResult1){
+				case Symbol.cherry:
+					coin += bettingAmount * 3;
+					break;
+				case Symbol.seven:
+					coin += bettingAmount * 7;
+					break;
+				case Symbol.bell:
+					coin += bettingAmount * 20;
+					break;
+				case Symbol.bar:
+					coin += bettingAmount * 100;
+					break;
+			}
+			UI.coinTxt.text = `コイン：${coin}`;
+			alert(`🍎🍎🍌🍌★★★★★★おめでとうございます！！★★★★★★🍓🍓🍉\n当たりました！！！！\n${coin - befCoin}を得ることができました！！！`);
+		}
+		else{
+			console.log("OMG....");
+		}
+	}
+}
+
 function calcSlotResult(){
 	return getRandomInt(0,SYMBOL_CNT) * SYMBOL_MASS_W - SYMBOL_MASS_W;;
 }
@@ -145,3 +191,4 @@ function getRandomInt(min, max) {
 	max = Math.floor(max);
 	return Math.floor(Math.random() * (max - min)) + min; //최댓값은 제외, 최솟값은 포함
 }
+
