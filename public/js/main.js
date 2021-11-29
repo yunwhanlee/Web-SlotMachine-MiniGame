@@ -3,6 +3,10 @@ const CANVAS_W = 816, CANVAS_H = 750;
 const SYMBOL_CNT = 4; 
 const SYMBOL_MASS_W = 96;
 const slotTileStartPosX=235, slotTileStartPosY=-278
+const BettingBtns = {
+	posX : [230,360,490],
+	coinV: [10,50,100]
+}
 
 const slotSpeed = 20;//spd=20 & span=spd*0.9 ||| spd=18 & span=spd*1.2 ||| spd=15 & span=spd*1.7||| spd=12 & span=spd*2.6||| spd=7 & span=spd*7.8 ||| spd=6 & span=spd*5.9
 const span = slotSpeed * 0.9;
@@ -46,25 +50,35 @@ const spr = {
 	bettingBtnsTileSet: new PIXI.Texture.from('../img/button_TileSet.png').baseTexture.setSize(215,223),
 };
 
-const btn = {
-	first: { 
-		idle: getSpriteFromTileSet(0,0,107,73, spr.bettingBtnsTileSet),
-		pushed: getSpriteFromTileSet(107,0,107,73, spr.bettingBtnsTileSet)
+const btn = [
+	{ 
+		obj: setrscFromTileSet("sprite",0,0,107,73, spr.bettingBtnsTileSet),
+		idle: setrscFromTileSet("texture",0,0,107,73, spr.bettingBtnsTileSet),
+		pushed: setrscFromTileSet("texture",107,0,107,73, spr.bettingBtnsTileSet)
 	},
-	second: { 
-		idle: getSpriteFromTileSet(0,74,107,73, spr.bettingBtnsTileSet),
-		pushed: getSpriteFromTileSet(107,74,107,73, spr.bettingBtnsTileSet)
+	{ 
+		obj: setrscFromTileSet("sprite",0,74,107,73, spr.bettingBtnsTileSet),
+		idle: setrscFromTileSet("texture",0,74,107,73, spr.bettingBtnsTileSet),
+		pushed: setrscFromTileSet("texture",107,74,107,73, spr.bettingBtnsTileSet)
 	},
-	third: { 
-		idle: getSpriteFromTileSet(0,148,107,73, spr.bettingBtnsTileSet),
-		pushed: getSpriteFromTileSet(107,148,107,73, spr.bettingBtnsTileSet)
+	{ 
+		obj: setrscFromTileSet("sprite",0,148,107,73, spr.bettingBtnsTileSet),
+		idle: setrscFromTileSet("texture",0,148,107,73, spr.bettingBtnsTileSet),
+		pushed: setrscFromTileSet("texture",107,148,107,73, spr.bettingBtnsTileSet)
 	},
-}
+]
 
-function getSpriteFromTileSet(x,y,w,h,tileset){
+function setrscFromTileSet(type,x,y,w,h,tileset){
 	const texture = new PIXI.Texture(tileset);
-	texture.frame = new PIXI.Rectangle(x,y,w,h);
-	return new PIXI.Sprite(texture);
+	switch(type){
+		case "sprite":
+			texture.frame = new PIXI.Rectangle(x,y,w,h);
+			return new PIXI.Sprite(texture);
+		case "texture":
+			texture.frame = new PIXI.Rectangle(x,y,w,h);
+			return texture;
+
+	}
 }
 
 //#Render
@@ -77,16 +91,18 @@ for(let i=0;i<3;i++){
 //machine body
 app.stage.addChild(spr.slotMachine);
 //machine handle
+spr.slotHandle.obj.position.set(670,300);
 app.stage.addChild(spr.slotHandle.obj);
 //btn1
-btn.first.idle.position.set(230,495);
-app.stage.addChild(btn.first.idle);
+btn[0].obj.position.set(230,495);
+// btn.first.obj.texture = btn.first.pushed
+app.stage.addChild(btn[0].obj);
 //btn2
-btn.second.idle.position.set(360,495);
-app.stage.addChild(btn.second.idle);
+btn[1].obj.position.set(360,495);
+app.stage.addChild(btn[1].obj);
 //btn3
-btn.third.idle.position.set(490,495);
-app.stage.addChild(btn.third.idle);
+btn[2].obj.position.set(490,495);
+app.stage.addChild(btn[2].obj);
 
 
 //--UI--
@@ -108,10 +124,10 @@ UI.coinTxt.x = 10; UI.coinTxt.y = 10;
 // spr.meme.anchor.set(0.5, 0.5);
 
 //#Event
+//Handle
 spr.slotHandle.obj.interactive = true;
 spr.slotHandle.obj.buttonMode = true;
-
-spr.slotHandle.obj.on('click', ()=> {
+spr.slotHandle.obj.on("click", ()=> {
 	if(!isPullHandle){
 		coin -= bettingAmount;
 		UI.coinTxt.text = `コイン：${coin}`;
@@ -125,6 +141,29 @@ spr.slotHandle.obj.on('click', ()=> {
 		init();
 	}
 });
+//Betting Buttons
+let isPushed = false;
+btn.forEach((ele, idx, b) => {
+	console.log(ele);
+	ele.obj.interactive = true;
+	ele.obj.buttonMode = true;
+	ele.obj.on("click", (e)=>{
+		if(!isPullHandle){
+			//名前で区切れないので、位置座標で分けました。
+			console.log(e.target.transform.position.x);
+			const targetPosX = e.target.transform.position.x;
+			const n = BettingBtns.posX.indexOf(targetPosX);
+			b.filter((e,i) => {
+				if(i == n){
+					e.obj.texture =  e.pushed;
+					bettingAmount = BettingBtns.coinV[i];
+				}else{
+					e.obj.texture =  e.idle;
+				}
+			});
+		}
+	})
+});
 
 //#Update
 app.ticker.add(cnt=>{
@@ -132,7 +171,7 @@ app.ticker.add(cnt=>{
 	console.log("stopDelayTime : ", stopDelayTime);
 	spr.slotSymbolTileSet.forEach((slot, idx) => {
 		//moving Slots
-		if(time < span ){
+		if(time < span){
 			slot.y = slotTileStartPosY + time * slotSpeed;
 		}
 		else{
