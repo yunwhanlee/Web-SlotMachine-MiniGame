@@ -35,8 +35,12 @@ const app = new PIXI.Application({width: CANVAS_W, height: CANVAS_H});
 document.body.appendChild(app.view);
 
 //#resource
+const UI_BETTING_AMOUNT_TXT_STYLE = {fontFamily : '\"Lucida Console\", Monaco, monospace', fontWeight: "bold", fontSize: 20, fill: ["#e3fdf4","#feffc2"]};
+const UI_COIN_TXT_STYLE = {fontFamily : '\"Lucida Console\", Monaco, monospace', fontWeight: "bold", fontSize: 40, fill: ["#e3fdf4","#feffc2"]};
+
 const UI = {
-	coinTxt : new PIXI.Text(`コイン：${coin}`,{fontFamily : 'Arial', fontSize: 24, fill : 0xffffff, align : 'center'}),
+	bettingTxt : new PIXI.Text(`ベッティング金額：${bettingAmount}`,UI_BETTING_AMOUNT_TXT_STYLE),
+	coinTxt : new PIXI.Text(`💰コイン：${coin}`,UI_COIN_TXT_STYLE),
 	slotSymbolsImg: PIXI.Sprite.from('../img/slot-symbolsWithScore.png'),
 }
 const spr = {
@@ -77,7 +81,6 @@ function setrscFromTileSet(type,x,y,w,h,tileset){
 		case "texture":
 			texture.frame = new PIXI.Rectangle(x,y,w,h);
 			return texture;
-
 	}
 }
 
@@ -107,13 +110,15 @@ app.stage.addChild(btn[2].obj);
 
 //--UI--
 //Symbol Score info
-app.stage.addChild(UI.slotSymbolsImg);
-UI.slotSymbolsImg.position.set(15,200);
+UI.slotSymbolsImg.position.set(15,15);
 UI.slotSymbolsImg.scale.set(0.5, 0.5);
+app.stage.addChild(UI.slotSymbolsImg);
 
 //CoinTxt
+UI.bettingTxt.x = 220; UI.bettingTxt.y = 620;
+app.stage.addChild(UI.bettingTxt);
+UI.coinTxt.x = 270; UI.coinTxt.y = 670;
 app.stage.addChild(UI.coinTxt);
-UI.coinTxt.x = 10; UI.coinTxt.y = 10;
 
 // app.stage.addChild(spr.meme);
 
@@ -128,9 +133,14 @@ UI.coinTxt.x = 10; UI.coinTxt.y = 10;
 spr.slotHandle.obj.interactive = true;
 spr.slotHandle.obj.buttonMode = true;
 spr.slotHandle.obj.on("click", ()=> {
+	if(coin < bettingAmount) {
+		alert("💰お金がないですね。さよなら"); 
+		return;
+	}
+
 	if(!isPullHandle){
 		coin -= bettingAmount;
-		UI.coinTxt.text = `コイン：${coin}`;
+		UI.coinTxt.text = `💰コイン：${coin}`;
 		isPullHandle = true;
 		spr.slotHandle.obj.texture = spr.slotHandle.anim[AnimEnum.handle.pull];
 	}
@@ -157,6 +167,7 @@ btn.forEach((ele, idx, b) => {
 				if(i == n){
 					e.obj.texture =  e.pushed;
 					bettingAmount = BettingBtns.coinV[i];
+					UI.bettingTxt.text = `ベッティング金額：${bettingAmount}`;
 				}else{
 					e.obj.texture =  e.idle;
 				}
@@ -254,7 +265,7 @@ function result(){
 					coin += bettingAmount * 100;
 					break;
 			}
-			UI.coinTxt.text = `コイン：${coin}`;
+			UI.coinTxt.text = `💰コイン：${coin}`;
 			alert(`🍎🍎🍌🍌★★★★★★おめでとうございます！！★★★★★★🍓🍓🍉\n${slotResult1}が当たりました！！！！\n${coin - befCoin}を得ることができました！！！`);
 		}
 		else{
