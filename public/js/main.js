@@ -1,11 +1,10 @@
 //value
-const CANVAS_W = 816, CANVAS_H = 750;
+const CANVAS_W = 816, CANVAS_H = 748;
 const SYMBOL_CNT = 4; 
 const SYMBOL_MASS_W = 96;
 const slotTileStartPosX=235, slotTileStartPosY=-278
 const BettingBtns = {
-	posX : [230,360,490],
-	coinV: [10,50,100]
+	posX : [230,360,490], coinV: [10,50,100]
 }
 
 const slotSpeed = 20;//spd=20 & span=spd*0.9 ||| spd=18 & span=spd*1.2 ||| spd=15 & span=spd*1.7||| spd=12 & span=spd*2.6||| spd=7 & span=spd*7.8 ||| spd=6 & span=spd*5.9
@@ -26,6 +25,17 @@ let stopDelayTime = 0.0;
 //Control Status value
 let bettingAmount = 10;
 let coin = 1000;
+
+//Gold Effect value
+let effplayTime = 0;
+let effTimes = [0,0,0];
+let distances = [0,0,0];
+const goldEFObjCnt = 30;
+let goldEF = {
+	list : [],
+	randPosX : [],
+	randPosY : [],
+}
 
 //Obj value
 const AnimEnum = Object.freeze({handle : {idle : 0, pull : 1}});
@@ -59,7 +69,7 @@ const spr = {
 	bettingBtnsTileSet: new PIXI.Texture.from('../img/button_TileSet.png').baseTexture.setSize(215,223),
 };
 
-const btn = [
+const btns = [
 	{ 
 		obj: setrscFromTileSet("sprite",107,0,107,73, spr.bettingBtnsTileSet),
 		idle: setrscFromTileSet("texture",0,0,107,73, spr.bettingBtnsTileSet),
@@ -101,17 +111,11 @@ app.stage.addChild(spr.slotMachine);
 //machine handle
 spr.slotHandle.obj.position.set(670,300);
 app.stage.addChild(spr.slotHandle.obj);
-//btn1
-btn[0].obj.position.set(230,495);
-// btn.first.obj.texture = btn.first.pushed
-app.stage.addChild(btn[0].obj);
-//btn2
-btn[1].obj.position.set(360,495);
-app.stage.addChild(btn[1].obj);
-//btn3
-btn[2].obj.position.set(490,495);
-app.stage.addChild(btn[2].obj);
-
+//betting btns
+for(let i=0; i<btns.length;i++){
+	btns[i].obj.position.set(BettingBtns.posX[i],495);
+	app.stage.addChild(btns[i].obj);	
+}
 
 //--UI--
 //Symbol Score info
@@ -137,16 +141,6 @@ graphics.beginFill(0x650A5A, 0);
 graphics.drawRect(228, 310, 372, 100);
 graphics.endFill();
 app.stage.addChild(graphics);
-// //gold Effect
-// for(let i=0; i<10;i++){
-// 	// spr.goldEF[i].position.set(CANVAS_W/2 + (i * 20), CANVAS_H/2 + (i * 20));
-// 	// spr.goldEF[i].rotation = Math.PI / 2 * 20;
-// 	spr.goldEF[i].width = 96; spr.goldEF[i].height = 96;
-// 	spr.goldEF[i].anchor.set(0.5, 0.5);
-// 	app.stage.addChild(spr.goldEF[i]);
-// }
-
-
 
 //#Event
 //Handle
@@ -172,7 +166,7 @@ spr.slotHandle.obj.on("click", ()=> {
 });
 //Betting Buttons
 let isPushed = false;
-btn.forEach((ele, idx, b) => {
+btns.forEach((ele, idx, b) => {
 	console.log(ele);
 	ele.obj.interactive = true;
 	ele.obj.buttonMode = true;
@@ -243,27 +237,16 @@ app.ticker.add(cnt=>{
 });
 
 //EFFECT当たった！
-let effplayTime = 0;
-let effTimes = [0,0,0];
-let distances = [0,0,0];
-const goldEFObjCnt = 30;
-let goldEF = {
-	list : [],
-	randPosX : [],
-	randPosY : [],
-}
 app.ticker.add((cnt) => {
 	const randPosMin = -200, randPosMax = +200;
 	const speed = 6;
 	const span = 5;
-	// if(!isWin) return;
-	
-	if(effplayTime < 90 && isWin){
+	const playTimeSpan = 90;
+	if(effplayTime < playTimeSpan && isWin){
+		// console.log("effplayTime:", effplayTime);
 		goldEF.list.forEach(ele => ele.visible = true);
 		UI.winTxt.visible = true;
 		effplayTime += cnt / span;
-		console.log("effplayTime:", effplayTime);
-		//CREATE OBJ
 		//set random
 		let rx = getRandomInt(randPosMin, randPosMax);
 		let ry = getRandomInt(randPosMin, randPosMax);
@@ -306,7 +289,7 @@ app.ticker.add((cnt) => {
 	}
 	else{
 		isWin = false;
-		goldEF.list.forEach(ele => {if(ele.visible) ele.visible = false;});
+		goldEF.list.forEach(ele => ele.visible = false);
 		UI.winTxt.visible = false;
 	}
 });
