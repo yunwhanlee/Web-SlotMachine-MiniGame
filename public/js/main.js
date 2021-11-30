@@ -1,5 +1,5 @@
 //value
-const CANVAS_W = 816, CANVAS_H = 748;
+const CANVAS_W = 816, CANVAS_H = 750;
 const SYMBOL_CNT = 4; 
 const SYMBOL_MASS_W = 96;
 const slotTileStartPosX=235, slotTileStartPosY=-278
