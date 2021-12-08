@@ -46,19 +46,21 @@ const app = new PIXI.Application({width: CANVAS_W, height: CANVAS_H});
 document.body.appendChild(app.view);
 
 //UI Style
-const UI_BETTING_AMOUNT_TXT_STYLE = {fontFamily : '\"Lucida Console\", Monaco, monospace', fontWeight: "bold", fontSize: 20, fill: ["#e3fdf4","#feffc2"]};
+const UI_BETTING_AMOUNT_TXT_STYLE = {fontFamily : '\"Lucida Console\", Monaco, monospace', fontWeight: "bold", fontSize: 20, fill: ["#e3fdf4","#feffc2"], lineHeight: 24,};
 const UI_COIN_TXT_STYLE = {fontFamily : '\"Lucida Console\", Monaco, monospace', fontWeight: "bold", fontSize: 40, fill: ["#e3fdf4","#feffc2"]};
 const UI_WIN_TXT_STYLE = {fontFamily : '\"Lucida Console\", Monaco, monospace', fontWeight: "bold", fontSize: 60, fill: ["#fff700","#ff1900"],stroke: "black", strokeThickness: 6};
-
-
+const UI_SYMBOLS_SCORE_TXT = `x7\n\nx7\n\n`
 
 const UI = {
 	bettingTxt : new PIXI.Text(`ベッティング金額：${bettingAmount}`,UI_BETTING_AMOUNT_TXT_STYLE),
 	coinTxt : new PIXI.Text(`💰コイン：${coin}`,UI_COIN_TXT_STYLE),
 	winTxt : new PIXI.Text(`💱当たりました！💸`, UI_WIN_TXT_STYLE),
-	slotSymbolsImg: new PIXI.Sprite.from('../img/slot-symbolsWithScore.png')
+	symbolsTileSetImg: new PIXI.Sprite.from('../img/slot-symbols2.png'),
+	symbolsScoreTxt: new PIXI.Text(`x7\n\nx3\n\nx20\n\nx100\n\nx10\n\nx30\n\nx50\n\nx77\n\nx777\n\nx33`, UI_BETTING_AMOUNT_TXT_STYLE)
 }
 const spr = {
+	//single
+	me: PIXI.Sprite.from('../img/meme_mini.png'),
 	goldEF : PIXI.Sprite.from('../img/coin.png'),
 	slotSymbolTileSet : [PIXI.Sprite.from('../img/slot-symbols.png'), PIXI.Sprite.from('../img/slot-symbols.png'), PIXI.Sprite.from('../img/slot-symbols.png')],
 	slotMachine : PIXI.Sprite.from('../img/slot-machine4_2.png'),
@@ -66,21 +68,19 @@ const spr = {
 		obj : PIXI.Sprite.from('../img/slot-machineHandle_Idle.png'),
 		anim: [PIXI.Texture.from('../img/slot-machineHandle_Idle.png'), PIXI.Texture.from('../img/slot-machineHandle_Pull.png')]
 	},
+	//multy
 	bettingBtnsTileSet: new PIXI.Texture.from('../img/button_TileSet.png').baseTexture.setSize(215,223),
 };
 
-const btns = [
-	{ 
-		obj: setrscFromTileSet("sprite",107,0,107,73, spr.bettingBtnsTileSet),
+const btns = [{ 
+		obj: setrscFromTileSet("sprite",107,0,107,73, spr.bettingBtnsTileSet),//default
 		idle: setrscFromTileSet("texture",0,0,107,73, spr.bettingBtnsTileSet),
 		pushed: setrscFromTileSet("texture",107,0,107,73, spr.bettingBtnsTileSet)
-	},
-	{ 
+	},{ 
 		obj: setrscFromTileSet("sprite",0,74,107,73, spr.bettingBtnsTileSet),
 		idle: setrscFromTileSet("texture",0,74,107,73, spr.bettingBtnsTileSet),
 		pushed: setrscFromTileSet("texture",107,74,107,73, spr.bettingBtnsTileSet)
-	},
-	{ 
+	},{ 
 		obj: setrscFromTileSet("sprite",0,148,107,73, spr.bettingBtnsTileSet),
 		idle: setrscFromTileSet("texture",0,148,107,73, spr.bettingBtnsTileSet),
 		pushed: setrscFromTileSet("texture",107,148,107,73, spr.bettingBtnsTileSet)
@@ -99,29 +99,50 @@ function setrscFromTileSet(type,x,y,w,h,tileset){
 	}
 }
 
-//#Render
+//##Render
 //--Sprite--
-//symbolTileSet
+//symbolsTileSet
 for(let i=0;i<3;i++){
 	app.stage.addChild(spr.slotSymbolTileSet[i]);
 	spr.slotSymbolTileSet[i].position.set(slotTileStartPosX + (i * 130), slotTileStartPosY); // 1st slot pos(235,250)
 }
+
+//me blurEffect
+app.stage.addChild(spr.me);
+spr.me.position.set(CANVAS_H - 30,0);
+const blurFilter = new PIXI.filters.BlurFilter()
+blurFilter.blur = 10;
+spr.me.filters = [blurFilter];
+console.log(spr.me);
+
 //machine body
 app.stage.addChild(spr.slotMachine);
+
 //machine handle
 spr.slotHandle.obj.position.set(670,300);
 app.stage.addChild(spr.slotHandle.obj);
-//betting btns
-for(let i=0; i<btns.length;i++){
-	btns[i].obj.position.set(BettingBtns.posX[i],495);
-	app.stage.addChild(btns[i].obj);	
-}
+
+PIXI.loader
+	.add('../img/button_TileSet.png')
+	.load(()=>{
+	//betting btns
+	for(let i=0; i<btns.length;i++){
+		btns[i].obj.position.set(BettingBtns.posX[i],495);
+		app.stage.addChild(btns[i].obj);	
+	}
+})
 
 //--UI--
-//Symbol Score info
-UI.slotSymbolsImg.position.set(15,15);
-UI.slotSymbolsImg.scale.set(0.5, 0.5);
-app.stage.addChild(UI.slotSymbolsImg);
+
+//Symbol Score Table
+//symbolsTileImg
+UI.symbolsTileSetImg.position.set(15,15);
+UI.symbolsTileSetImg.scale.set(0.5, 0.5);
+app.stage.addChild(UI.symbolsTileSetImg);
+//scoreTxt
+UI.symbolsScoreTxt.position.set(75,30);
+app.stage.addChild(UI.symbolsScoreTxt);
+
 //BettingAmount
 UI.bettingTxt.x = 220; UI.bettingTxt.y = 620;
 app.stage.addChild(UI.bettingTxt);
@@ -142,7 +163,7 @@ graphics.drawRect(228, 310, 372, 100);
 graphics.endFill();
 app.stage.addChild(graphics);
 
-//#Event
+//##Event
 //Handle
 spr.slotHandle.obj.interactive = true;
 spr.slotHandle.obj.buttonMode = true;
