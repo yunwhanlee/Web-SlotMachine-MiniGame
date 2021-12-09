@@ -25,9 +25,8 @@ let isPullHandle = false;
 let isFinish = false;
 let isWin = false;
 
-let isSlotStop1 = false, slotResult1 = null;
-let isSlotStop2 = false, slotResult2 = null;
-let isSlotStop3 = false, slotResult3 = null;
+let isSlotStopList = [false,false,false];
+let slotResultList = [null,null,null]
 let time = 0.0;
 let stopDelayTime = 0.0;
 
@@ -263,33 +262,13 @@ app.ticker.add(cnt=>{
 
 		//Pull Handle
 		if(isPullHandle){
-			if(stopDelayTime < stopSlotDelaySpan * 3)
-				stopDelayTime += cnt;
-				const num = 2
-			spr.slotSymbolTileSet.forEach((slot, idx) => {
-				switch(idx){
-					case 0:
-						if(!isSlotStop1) {isSlotStop1=true; slotResult1 = 0}
-						if(stopDelayTime > stopSlotDelaySpan * 1) slot.y = slotResult1 + posYOverDown;
-						if(slot.y > slotResult1){//console.log(slot.y , slotResult1); 
-							slot.y -= stopDelayTime;
-						}//anim
-						break;
-					case 1:
-						if(!isSlotStop2) {isSlotStop2=true; slotResult2 = 0}
-						if(stopDelayTime > stopSlotDelaySpan * 2) slot.y = slotResult2 + posYOverDown;
-						if(slot.y > slotResult2){// console.log(slot.y , slotResult2); 
-							slot.y -= stopDelayTime;
-						}//anim
-						break;
-					case 2:
-						if(!isSlotStop3) {isSlotStop3=true; slotResult3 = 0}
-						if(stopDelayTime > stopSlotDelaySpan * 2.5) {slot.y = slotResult3 + posYOverDown; result();}
-						if(slot.y > slotResult3){// console.log(slot.y , slotResult3); 
-							slot.y -= stopDelayTime;
-						}//anim
-						break;
-				}
+			//止める
+			if(stopDelayTime < stopSlotDelaySpan * 3) stopDelayTime += cnt;
+			const stopValue = 0.85;
+			spr.slotSymbolTileSet.forEach((slot, i) => {
+				if(!isSlotStopList[i]) {isSlotStopList[i]=true; slotResultList[i] = getRandomSymbol();}
+				if(stopDelayTime > stopSlotDelaySpan * stopValue * (i+1)) slot.y = slotResultList[i] + posYOverDown;
+				if(slot.y > slotResultList[i]) slot.y -= stopDelayTime; //console.log(slot.y , slotResultList[i]); 
 			});
 		}
 	});
@@ -360,9 +339,9 @@ function init(){
 	time = 0;
 	stopDelayTime = 0;
 	isPullHandle = false;
-	isSlotStop1 = false, slotResult1 = null;
-	isSlotStop2 = false, slotResult2 = null;
-	isSlotStop3 = false, slotResult3 = null;
+	isSlotStopList[0] = false, slotResultList[0] = null;
+	isSlotStopList[1] = false, slotResultList[1] = null;
+	isSlotStopList[2] = false, slotResultList[2] = null;
 	isFinish = false;
 	UI.winTxt.visible = false;
 	UI.getCoinTxt.visible = false;
@@ -371,13 +350,13 @@ function init(){
 function result(){
 	if(!isFinish){
 		isFinish = true;
-		console.log("result : ", slotResult1, slotResult2, slotResult3);
+		console.log("result : ", slotResultList[0], slotResultList[1], slotResultList[2]);
 		//当たりました！
-		if(slotResult1 === slotResult2 && slotResult2 === slotResult3 && slotResult3 === slotResult1 && !isWin){
+		if(slotResultList[0] === slotResultList[1] && slotResultList[1] === slotResultList[2] && slotResultList[2] === slotResultList[0] && !isWin){
 			isWin = true;
 			effplayTime = 0;
 			let award = 0;
-			switch(slotResult1){//get coin
+			switch(slotResultList[0]){//get coin
 				case symbol.seven.idx:		award =	symbol.seven.award;		coin += bettingAmount * award;	break;
 				case symbol.cherry.idx:		award = symbol.cherry.award;	coin += bettingAmount * award;	break;
 				case symbol.bell.idx:		award = symbol.bell.award;		coin += bettingAmount * award;	break;
@@ -389,8 +368,6 @@ function result(){
 				case symbol.diamond.idx:	award = symbol.diamond.award;	coin += bettingAmount * award;	break;
 				case symbol.animal.idx:		award = symbol.animal.award;	coin += bettingAmount * award;	break;
 			}
-			
-
 			UI.coinTxt.text = `💰コイン：${coin}`;
 			UI.getCoinTxt.text = `${bettingAmount * award}円 習得 (X${award}倍)`;
 		}
