@@ -61,6 +61,14 @@ const symbol = Object.freeze({
 	animal : { n: SYMBOL_WIDTH * -7, award : 33}
 });
 
+//Bonus Fox Stage
+const realFoxStageLength = 500;
+const FoxStagePerMax = 1000;
+const distPer = 1000 / 500;
+const FoxStartPosX = 130;
+let foxGoalPosX = FoxStartPosX;
+
+
 //#canvas
 const app = new PIXI.Application({width: CANVAS_W, height: CANVAS_H});
 document.body.appendChild(app.view);
@@ -117,14 +125,14 @@ const foxW = 64;
 const fox = {
 	obj : setrscFromTileSet("sprite",0,0,foxW,foxW, spr.foxSheet),//default,
 	idle: [
-		setrscFromTileSet("texture",0,0,foxW,foxW, spr.foxSheet),
+		setrscFromTileSet("texture",0	  ,0,foxW,foxW, spr.foxSheet),
 		setrscFromTileSet("texture",foxW*1,0,foxW,foxW, spr.foxSheet),
 		setrscFromTileSet("texture",foxW*2,0,foxW,foxW, spr.foxSheet),
 		setrscFromTileSet("texture",foxW*3,0,foxW,foxW, spr.foxSheet),
 		setrscFromTileSet("texture",foxW*4,0,foxW,foxW, spr.foxSheet),
 	],
 	run: [
-		setrscFromTileSet("texture",0,foxW*2,foxW,foxW, spr.foxSheet),
+		setrscFromTileSet("texture",0	  ,foxW*2,foxW,foxW, spr.foxSheet),
 		setrscFromTileSet("texture",foxW*1,foxW*2,foxW,foxW, spr.foxSheet),
 		setrscFromTileSet("texture",foxW*2,foxW*2,foxW,foxW, spr.foxSheet),
 		setrscFromTileSet("texture",foxW*3,foxW*2,foxW,foxW, spr.foxSheet),
@@ -132,7 +140,29 @@ const fox = {
 		setrscFromTileSet("texture",foxW*5,foxW*2,foxW,foxW, spr.foxSheet),
 		setrscFromTileSet("texture",foxW*6,foxW*2,foxW,foxW, spr.foxSheet),
 		setrscFromTileSet("texture",foxW*7,foxW*2,foxW,foxW, spr.foxSheet),
-	]
+	],
+	happy: [
+		setrscFromTileSet("texture",0	  ,foxW*3,foxW,foxW, spr.foxSheet),
+		setrscFromTileSet("texture",foxW*1,foxW*3,foxW,foxW, spr.foxSheet),
+		setrscFromTileSet("texture",foxW*2,foxW*3,foxW,foxW, spr.foxSheet),
+		setrscFromTileSet("texture",foxW*3,foxW*3,foxW,foxW, spr.foxSheet),
+		setrscFromTileSet("texture",foxW*4,foxW*3,foxW,foxW, spr.foxSheet),
+		setrscFromTileSet("texture",foxW*5,foxW*3,foxW,foxW, spr.foxSheet),
+		setrscFromTileSet("texture",foxW*6,foxW*3,foxW,foxW, spr.foxSheet),
+		setrscFromTileSet("texture",foxW*7,foxW*3,foxW,foxW, spr.foxSheet),
+		setrscFromTileSet("texture",foxW*8,foxW*3,foxW,foxW, spr.foxSheet),
+		setrscFromTileSet("texture",foxW*9,foxW*3,foxW,foxW, spr.foxSheet),
+		setrscFromTileSet("texture",foxW*10,foxW*3,foxW,foxW, spr.foxSheet),
+	],
+	sleep: [
+		setrscFromTileSet("texture",0	  ,foxW*5,foxW,foxW, spr.foxSheet),
+		setrscFromTileSet("texture",foxW*1,foxW*5,foxW,foxW, spr.foxSheet),
+		setrscFromTileSet("texture",foxW*2,foxW*5,foxW,foxW, spr.foxSheet),
+		setrscFromTileSet("texture",foxW*3,foxW*5,foxW,foxW, spr.foxSheet),
+		setrscFromTileSet("texture",foxW*4,foxW*5,foxW,foxW, spr.foxSheet),
+	],
+
+
 }
 
 function setrscFromTileSet(type,x,y,w,h,tileset){
@@ -150,25 +180,24 @@ function setrscFromTileSet(type,x,y,w,h,tileset){
 
 //##Render
 //--Sprite--
-//非同期
-PIXI.loader//BettingButtons
+//非同期(Sheet)
+PIXI.loader
 	.add('../img/button_TileSet.png')
 	.load(()=>{
 	//betting btns
 	for(let i=0; i<btns.length;i++){
 		btns[i].obj.position.set(BettingBtns.posX[i],495);
-		app.stage.addChild(btns[i].obj);	
+		app.stage.addChild(btns[i].obj);
 	}
 
 	//fox Anim
-	fox.obj = new PIXI.AnimatedSprite(fox.run);
-	fox.obj.position.set(150,0);
-	fox.obj.animationSpeed = 0.2;
+	fox.obj = new PIXI.AnimatedSprite(fox.sleep);
+	fox.obj.position.set(FoxStartPosX,65);
+	fox.obj.scale.set(1);
+	fox.obj.animationSpeed = 0.15;
 	app.stage.addChild(fox.obj);
 	fox.obj.play();
 });
-
-
 
 //symbolsTileSet
 for(let i=0;i<3;i++){
@@ -240,10 +269,18 @@ spr.slotHandle.obj.on("click", ()=> {
 			alert("💰お金がないですね。さよなら"); 
 			return;
 		}
+		//コイン減らす
 		coin -= bettingAmount;
 		UI.coinTxt.text = `💰コイン：${coin}`;
+		//ハンドル画像変換
 		isPullHandle = true;
 		spr.slotHandle.obj.texture = spr.slotHandle.anim[animEnum.handle.pull];
+		//Foxゴール地点＋
+		foxGoalPosX += bettingAmount / distPer;
+		console.log("fox.PosX = ", fox.obj.position.x);
+		fox.obj.textures = fox.run;
+		fox.obj.play();
+
 	}
 	else{
 		//スロットが全部止める前には、ハンドルコントロール禁止(BUG)
@@ -375,6 +412,30 @@ app.ticker.add((cnt) => {
 		goldEF.list.forEach(ele => ele.visible = false);
 		UI.winTxt.visible = false;
 		UI.getCoinTxt.visible = false;
+	}
+});
+
+//Fox
+//Anim
+const ms = 500;
+setInterval(foxAnim, ms);
+
+function foxAnim(){
+	if(isWin){
+		fox.obj.textures = fox.happy;
+		fox.obj.play();
+	}
+	else if(fox.obj.position.x >= foxGoalPosX && fox.obj.textures != fox.sleep){
+		fox.obj.textures = fox.idle;
+		fox.obj.play();
+	}
+}
+
+//Transform
+app.ticker.add((cnt) => {
+	const speed = 4;
+	if(fox.obj.position.x < foxGoalPosX){
+		fox.obj.position.x += cnt / speed;
 	}
 });
 
