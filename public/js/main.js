@@ -58,15 +58,18 @@ const symbol = Object.freeze({
 	earth : { n: SYMBOL_WIDTH * -4,  award : 50},
 	emerald : { n: SYMBOL_WIDTH * -5,  award : 77},
 	diamond : { n: SYMBOL_WIDTH * -6 , award : 777},
-	animal : { n: SYMBOL_WIDTH * -7, award : 33}
+	animal : { n: SYMBOL_WIDTH * -7, award : 33},
+	twoCherry : { n: SYMBOL_WIDTH * -8, award : 2},
+	oneCherry : { n: SYMBOL_WIDTH * -9, award : 5},
 });
 
+
 //Bonus Fox Stage
-const realFoxStageLength = 500;
+const FoxStartOffsetPosX = 140;
+const FoxRealStageLength = 500 + FoxStartOffsetPosX;
 const FoxStagePerMax = 1000;
 const distPer = 1000 / 500;
-const FoxStartPosX = 140;
-let foxGoalPosX = FoxStartPosX;
+let foxGoalPosX = FoxStartOffsetPosX;
 
 
 //#canvas
@@ -74,19 +77,20 @@ const app = new PIXI.Application({width: CANVAS_W, height: CANVAS_H});
 document.body.appendChild(app.view);
 
 //UI Style
-const UI_BETTING_AMOUNT_TXT_STYLE = {fontFamily : '\"Lucida Console\", Monaco, monospace', fontWeight: "bold", fontSize: 20, fill: ["#e3fdf4","#feffc2"], lineHeight: 24,};
+const UI_BETTING_AMOUNT_TXT_STYLE = {fontFamily : '\"Lucida Console\", Monaco, monospace', fontWeight: "bold", fontSize: 20, fill: ["#e3fdf4","#feffc2"], lineHeight: 24};
 const UI_COIN_TXT_STYLE = {fontFamily : '\"Lucida Console\", Monaco, monospace', fontWeight: "bold", fontSize: 40, fill: ["#e3fdf4","#feffc2"]};
 const UI_WIN_TXT_STYLE = {fontFamily : '\"Lucida Console\", Monaco, monospace', fontWeight: "bold", fontSize: 60, fill: ["#fff700","#ff1900"],stroke: "black", strokeThickness: 6};
 const UI_WIN_GETCOIN_TXT_STYLE = {dropShadow: true, fill: ["#fff370","#fd0"],fillGradientStops: [0],fontSize: 29,fontStyle: "italic",fontWeight: "bold",strokeThickness: 5};
-
+const UI_BONUS_BETTING_TXT_STYLE = {fill: ["#c3f2fe","white","#403dff"],fontFamily: "\"Lucida Console\", Monaco, monospace",fontSize: 20,fontStyle: "italic",lineJoin: "round",strokeThickness: 3, lineHeight: 28};
 
 const UI = {
 	symbolsTileSetImg: new PIXI.Sprite.from('../img/slot-symbols2.png'),
 	symbolsScoreTxt: new PIXI.Text(`x7\n\nx3\n\nx20\n\nx100\n\nx10\n\nx30\n\nx50\n\nx77\n\nx777\n\nx33\n\nx2\n\nx5`, UI_BETTING_AMOUNT_TXT_STYLE),
 	bettingTxt : new PIXI.Text(`ベッティング金額：${bettingAmount}`,UI_BETTING_AMOUNT_TXT_STYLE),
-	coinTxt : new PIXI.Text(`💰コイン：${coin}`,UI_COIN_TXT_STYLE),
+	coinTxt : new PIXI.Text(`💰ｺｲﾝ：${coin}円`,UI_COIN_TXT_STYLE),
 	winTxt : new PIXI.Text(`💱当たりました！💸`, UI_WIN_TXT_STYLE),
-	getCoinTxt : new PIXI.Text(`9999コイン 習得`, UI_WIN_GETCOIN_TXT_STYLE),
+	getCoinTxt : new PIXI.Text(`9999ｺｲﾝ 習得`, UI_WIN_GETCOIN_TXT_STYLE),
+	bonusBettingTxt : new PIXI.Text(`   ✕\n  0円\n  10円\n  50円\n  100円`, UI_BONUS_BETTING_TXT_STYLE),
 }
 const spr = {
 	//single
@@ -194,7 +198,7 @@ PIXI.loader
 	spr.foxStage.position.set(150,0);
 	//fox Anim
 	fox.obj = new PIXI.AnimatedSprite(fox.sleep);
-	fox.obj.position.set(FoxStartPosX,-10);
+	fox.obj.position.set(FoxStartOffsetPosX,-10);
 	fox.obj.scale.set(0.8);
 	fox.obj.animationSpeed = 0.15;
 	app.stage.addChild(fox.obj);
@@ -230,12 +234,16 @@ app.stage.addChild(UI.symbolsTileSetImg);
 UI.symbolsScoreTxt.position.set(75,30);//scoreTxt
 app.stage.addChild(UI.symbolsScoreTxt);
 
+//Bonus Betting Table
+app.stage.addChild(UI.bonusBettingTxt);
+UI.bonusBettingTxt.position.set(10,590);
+
 //BettingAmount
 UI.bettingTxt.x = 220; UI.bettingTxt.y = 620;
 app.stage.addChild(UI.bettingTxt);
 
 //Coin
-UI.coinTxt.x = 270; UI.coinTxt.y = 670;
+UI.coinTxt.x = 230; UI.coinTxt.y = 670;
 app.stage.addChild(UI.coinTxt);
 
 //Win
@@ -252,12 +260,33 @@ UI.getCoinTxt.visible = false;
 app.stage.addChild(UI.getCoinTxt);
 
 //focusBoxOutline
-const graphics = new PIXI.Graphics();
-graphics.lineStyle(3, 0xFEEB77, 1);
-graphics.beginFill(0x650A5A, 0);
-graphics.drawRect(228, 310, 372, 100);
-graphics.endFill();
-app.stage.addChild(graphics);
+const focusSlotBox = new PIXI.Graphics();
+focusSlotBox.lineStyle(3, 0xFEEB77, 1);
+focusSlotBox.beginFill(0x650A5A, 0);
+focusSlotBox.drawRect(228, 310, 372, 100);
+focusSlotBox.endFill();
+app.stage.addChild(focusSlotBox);
+
+const focusSymbolTbBox = new PIXI.Graphics();
+const symbolTbOffsetPosY = 15;
+const symbolTbWidth = SYMBOL_WIDTH / 2;
+focusSymbolTbBox.lineStyle(2, 0xFEEB77, 1);
+focusSymbolTbBox.beginFill(0x650A5A, 0);
+focusSymbolTbBox.drawRect(10, symbolTbOffsetPosY, 48*2.5, 48);
+focusSymbolTbBox.endFill();
+app.stage.addChild(focusSymbolTbBox);
+
+const focusBettingTbBox = new PIXI.Graphics();
+const bettingTbOffsetPosY = 618;
+const bettingTbWidth = 28;
+focusBettingTbBox.lineStyle(2, 0xFEEB77, 1);
+focusBettingTbBox.beginFill(0x650A5A, 0);
+focusBettingTbBox.drawRect(10, bettingTbOffsetPosY, 48*2.5, 24);
+focusBettingTbBox.endFill();
+app.stage.addChild(focusBettingTbBox);
+
+
+
 
 //##Event
 //Pull Handle
@@ -269,9 +298,9 @@ spr.slotHandle.obj.on("click", ()=> {
 			alert("💰お金がないですね。さよなら"); 
 			return;
 		}
-		//コイン減らす
+		//ｺｲﾝ減らす
 		coin -= bettingAmount;
-		UI.coinTxt.text = `💰コイン：${coin}`;
+		UI.coinTxt.text = `💰ｺｲﾝ：${coin}円`;
 		//ハンドル画像変換
 		isPullHandle = true;
 		spr.slotHandle.obj.texture = spr.slotHandle.anim[animEnum.handle.pull];
@@ -320,7 +349,7 @@ btns.forEach((ele, idx, b) => {
 });
 
 //##Update
-//Slot Animation
+//**Slot Animation
 app.ticker.add(cnt=>{
 	time += cnt;
 	// console.log("time : ", time);
@@ -355,7 +384,7 @@ app.ticker.add(cnt=>{
 	});
 });
 
-//EFFECT当たった！
+//**EFFECT当たった！
 app.ticker.add((cnt) => {
 	const randPosMin = -200, randPosMax = +200;
 	const speed = 6;
@@ -415,11 +444,10 @@ app.ticker.add((cnt) => {
 	}
 });
 
-//Fox
+//**Fox Stage Bonus
 //Anim
 const ms = 500;
 setInterval(foxAnim, ms);
-
 function foxAnim(){
 	if(isWin){
 		fox.obj.textures = fox.happy;
@@ -432,13 +460,88 @@ function foxAnim(){
 }
 
 //Transform
+let foxBonusStopSpan = 150;
+let foxBonusCnt = 0;
+let isSelectSymbolBonus = false;
+let isSelectBettingBonus = false;
+let bonusSymbolResult = null;
+let bonusBettingResult = null;
 app.ticker.add((cnt) => {
-	const speed = 4;
+	const speed = 1;
+	// console.log("foxPosX:",fox.obj.position.x,", foxCnt : ", cnt);
 	if(fox.obj.position.x < foxGoalPosX){
-		fox.obj.position.x += cnt / speed;
+		fox.obj.position.x += cnt * speed * 1;
+	}
+	else if(fox.obj.position.x >= FoxRealStageLength){
+		//Symbol Ramdom Select
+		if(!isSelectSymbolBonus){
+			if(foxBonusCnt < foxBonusStopSpan){//ボナースのシンボルを回す
+				foxBonusCnt += cnt;
+				//console.log("foxBonusCnt=", foxBonusCnt, "cnt=", Math.floor(cnt));
+				if(focusSymbolTbBox.position.y < symbolTbWidth * (SYMBOL_CNT + 1)){
+					focusSymbolTbBox.position.y += symbolTbWidth * Math.floor(cnt);
+					console.log(cnt);
+				}
+				else{
+					focusSymbolTbBox.position.y = 0;
+				}
+			}
+			else{//シンボルの決定
+					//set BouseSymbol
+					const SymbolIdx = Math.floor(focusSymbolTbBox.position.y * 2) / SYMBOL_WIDTH;
+					bonusSymbolResult = Object.values(symbol).filter((obj,i) =>i==SymbolIdx? obj : "");
+					// console.log("SymbolIdx=", SymbolIdx, ", bonusSymbolResult=", bonusSymbolResult[0].award);
+					isSelectSymbolBonus = true;
+					//reset
+					foxBonusCnt = 0;
+			}
+		}
+		//Betting Random Select
+		else if(isSelectSymbolBonus && !isSelectBettingBonus){
+			if(foxBonusCnt < foxBonusStopSpan){//ボナースのシンボルを回す
+				foxBonusCnt += cnt;
+				if(focusBettingTbBox.position.y < bettingTbWidth * 3){
+					// focusBettingTbBox.position.y += bettingTbWidth * Math.floor(cnt);
+					const rand = getRandomInt(0, 100);
+					const bt0=0, bt10=1, bt50=2, bt100=3;
+					const res = (rand < 15) ? bt0 : (rand < 60) ? bt10 : (rand < 90) ? bt50 : bt100;
+					
+					console.log("rand=",rand, "=> idx=", res);
+					focusBettingTbBox.position.y = bettingTbWidth * res;
+					console.log(focusBettingTbBox.position.y, "=" ,bettingTbWidth, "*" , res);
+					//random number : 0円(15%),10円(45%),50円(30%),100円(10%)
+					bonusBettingResult = (res == bt0) ? 0 : (res == bt10) ? 10 : (res == bt50) ? 50 : 100;
+				}
+				else{
+					focusBettingTbBox.position.y = 0;
+				}
+			}
+			else{//BETTINGの決定
+				if(!isWin){
+					if(bonusBettingResult != 0){
+						//setWinCoin
+						isWin = true;	effplayTime = 0;
+						addWinCoin(bonusSymbolResult[0].award, bonusBettingResult);
+					}
+					//reset
+					foxBonusCnt = 0;
+					fox.obj.position.x = FoxStartOffsetPosX;
+					foxGoalPosX = FoxStartOffsetPosX;
+					isSelectSymbolBonus = false;
+					isSelectBettingBonus = false;
+					bonusSymbolResult = null;
+					bonusBettingResult = null;
+				}
+			}
+		}
 	}
 });
-
+function addWinCoin(symbolAward, bettingAmount){
+	award = symbolAward;
+	coin += bettingAmount * award;
+	UI.coinTxt.text = `💰ｺｲﾝ：${coin}円`;
+	UI.getCoinTxt.text = `${bettingAmount * award}円 習得 (X${award}倍)`;
+}
 //FUNCTION------------------------------------------------------------------------------------------
 function init(){
 	time = 0;
@@ -483,8 +586,7 @@ function result(){
 				|| slotResultList[1]==symbol.cherry.n && slotResultList[2]==symbol.cherry.n 
 			){
 			isWin = true;	effplayTime = 0;
-			award = 2;
-			coin += bettingAmount * award;
+			addWinCoin(2,bettingAmount);
 		}
 		//3.SAME, SAME, CHERRY
 		else if(slotResultList[0]==symbol.cherry.n && slotResultList[1]==slotResultList[2]
@@ -492,12 +594,8 @@ function result(){
 				|| slotResultList[2]==symbol.cherry.n && slotResultList[0]==slotResultList[1]
 			){
 			isWin = true;	effplayTime = 0;
-			award = 5;
-			coin += bettingAmount * award;
+			addWinCoin(5,bettingAmount);
 		}
-		//UI結果表示
-		UI.coinTxt.text = `💰コイン：${coin}`;
-		UI.getCoinTxt.text = `${bettingAmount * award}円 習得 (X${award}倍)`;
 	}
 }
 
