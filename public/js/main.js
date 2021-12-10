@@ -65,7 +65,7 @@ const symbol = Object.freeze({
 const realFoxStageLength = 500;
 const FoxStagePerMax = 1000;
 const distPer = 1000 / 500;
-const FoxStartPosX = 130;
+const FoxStartPosX = 140;
 let foxGoalPosX = FoxStartPosX;
 
 
@@ -104,6 +104,7 @@ const spr = {
 	//multy
 	bettingBtnsSheet: new PIXI.Texture.from('../img/button_TileSet.png').baseTexture.setSize(215,223),
 	foxSheet: new PIXI.Texture.from('../img/foxSheet64x64.png').baseTexture.setSize(896,448),
+	foxStage: new PIXI.Sprite.from('../img/foxStage.jpg')
 };
 
 const btns = [{ 
@@ -161,8 +162,6 @@ const fox = {
 		setrscFromTileSet("texture",foxW*3,foxW*5,foxW,foxW, spr.foxSheet),
 		setrscFromTileSet("texture",foxW*4,foxW*5,foxW,foxW, spr.foxSheet),
 	],
-
-
 }
 
 function setrscFromTileSet(type,x,y,w,h,tileset){
@@ -190,10 +189,13 @@ PIXI.loader
 		app.stage.addChild(btns[i].obj);
 	}
 
+	//fox Stage
+	app.stage.addChild(spr.foxStage);
+	spr.foxStage.position.set(150,0);
 	//fox Anim
 	fox.obj = new PIXI.AnimatedSprite(fox.sleep);
-	fox.obj.position.set(FoxStartPosX,65);
-	fox.obj.scale.set(1);
+	fox.obj.position.set(FoxStartPosX,-10);
+	fox.obj.scale.set(0.8);
 	fox.obj.animationSpeed = 0.15;
 	app.stage.addChild(fox.obj);
 	fox.obj.play();
@@ -219,8 +221,6 @@ app.stage.addChild(spr.slotMachine);
 //machine handle
 spr.slotHandle.obj.position.set(670,300);
 app.stage.addChild(spr.slotHandle.obj);
-
-
 
 //--UI--
 //Symbol Score Table
