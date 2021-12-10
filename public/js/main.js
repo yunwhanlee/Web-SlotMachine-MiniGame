@@ -33,6 +33,7 @@ let stopDelayTime = 0.0;
 //Control Status value
 let bettingAmount = 10;
 let coin = 1000;
+let award = 0;
 
 //Gold Effect value
 let effplayTime = 0;
@@ -48,16 +49,16 @@ let goldEF = {
 //Context
 const animEnum = Object.freeze({handle : {idle : 0, pull : 1}});
 const symbol = Object.freeze({
-	seven : { idx: SYMBOL_WIDTH * 2, award : 7},
-	cherry : { idx: SYMBOL_WIDTH * 1,  award : 3},
-	bell : { idx: SYMBOL_WIDTH * 0, award : 20},
-	bar : { idx: SYMBOL_WIDTH * -1,  award : 100},
-	grape : { idx: SYMBOL_WIDTH * -2, award : 10},
-	heart : { idx: SYMBOL_WIDTH * -3, award : 30},
-	earth : { idx: SYMBOL_WIDTH * -4,  award : 50},
-	emerald : { idx: SYMBOL_WIDTH * -5,  award : 77},
-	diamond : { idx: SYMBOL_WIDTH * -6 , award : 777},
-	animal : { idx: SYMBOL_WIDTH * -7, award : 33}
+	seven : { n: SYMBOL_WIDTH * 2, award : 7},
+	cherry : { n: SYMBOL_WIDTH * 1,  award : 3},
+	bell : { n: SYMBOL_WIDTH * 0, award : 20},
+	bar : { n: SYMBOL_WIDTH * -1,  award : 100},
+	grape : { n: SYMBOL_WIDTH * -2, award : 10},
+	heart : { n: SYMBOL_WIDTH * -3, award : 30},
+	earth : { n: SYMBOL_WIDTH * -4,  award : 50},
+	emerald : { n: SYMBOL_WIDTH * -5,  award : 77},
+	diamond : { n: SYMBOL_WIDTH * -6 , award : 777},
+	animal : { n: SYMBOL_WIDTH * -7, award : 33}
 });
 
 //#canvas
@@ -73,7 +74,7 @@ const UI_WIN_GETCOIN_TXT_STYLE = {dropShadow: true, fill: ["#fff370","#fd0"],fil
 
 const UI = {
 	symbolsTileSetImg: new PIXI.Sprite.from('../img/slot-symbols2.png'),
-	symbolsScoreTxt: new PIXI.Text(`x7\n\nx3\n\nx20\n\nx100\n\nx10\n\nx30\n\nx50\n\nx77\n\nx777\n\nx33`, UI_BETTING_AMOUNT_TXT_STYLE),
+	symbolsScoreTxt: new PIXI.Text(`x7\n\nx3\n\nx20\n\nx100\n\nx10\n\nx30\n\nx50\n\nx77\n\nx777\n\nx33\n\nx2\n\nx5`, UI_BETTING_AMOUNT_TXT_STYLE),
 	bettingTxt : new PIXI.Text(`ベッティング金額：${bettingAmount}`,UI_BETTING_AMOUNT_TXT_STYLE),
 	coinTxt : new PIXI.Text(`💰コイン：${coin}`,UI_COIN_TXT_STYLE),
 	winTxt : new PIXI.Text(`💱当たりました！💸`, UI_WIN_TXT_STYLE),
@@ -212,7 +213,8 @@ spr.slotHandle.obj.on("click", ()=> {
 	else{
 		//スロットが全部止める前には、ハンドルコントロール禁止(BUG)
 		if(stopDelayTime <= stopSlotDelaySpan * 3) return;
-		if(isWin) return;
+		//当たったら、日程時間(エフェクト再生)ハンドルコントール停止。
+		// if(isWin) return;
 
 		isPullHandle = false;
 		spr.slotHandle.obj.texture = spr.slotHandle.anim[animEnum.handle.idle];
@@ -266,9 +268,16 @@ app.ticker.add(cnt=>{
 			if(stopDelayTime < stopSlotDelaySpan * 3) stopDelayTime += cnt;
 			const stopValue = 0.85;
 			spr.slotSymbolTileSet.forEach((slot, i) => {
-				if(!isSlotStopList[i]) {isSlotStopList[i]=true; slotResultList[i] = getRandomSymbol();}
-				if(stopDelayTime > stopSlotDelaySpan * stopValue * (i+1)) slot.y = slotResultList[i] + posYOverDown;
-				if(slot.y > slotResultList[i]) slot.y -= stopDelayTime; //console.log(slot.y , slotResultList[i]); 
+				//Entry slot結果を初期化
+				if(!isSlotStopList[i]) {isSlotStopList[i]=true; slotResultList[i] = getRandomSymbol()}
+				//Animation 止めるslotの位置を↓にちょっとずれる
+				if(stopDelayTime > stopSlotDelaySpan * stopValue * (i+1)) {
+					slot.y = slotResultList[i] + posYOverDown;
+					if(i == spr.slotSymbolTileSet.length-1) result();
+				}
+				//Animation ずれたslotの位置を戻す
+				if(slot.y > slotResultList[i]) {slot.y -= stopDelayTime; }//console.log(slot.y , slotResultList[i]); 
+				
 			});
 		}
 	});
@@ -346,34 +355,53 @@ function init(){
 	UI.winTxt.visible = false;
 	UI.getCoinTxt.visible = false;
 };
-
 function result(){
 	if(!isFinish){
+		console.log("RESULT");
 		isFinish = true;
 		console.log("result : ", slotResultList[0], slotResultList[1], slotResultList[2]);
 		//当たりました！
-		if(slotResultList[0] === slotResultList[1] && slotResultList[1] === slotResultList[2] && slotResultList[2] === slotResultList[0] && !isWin){
-			isWin = true;
-			effplayTime = 0;
-			let award = 0;
-			switch(slotResultList[0]){//get coin
-				case symbol.seven.idx:		award =	symbol.seven.award;		coin += bettingAmount * award;	break;
-				case symbol.cherry.idx:		award = symbol.cherry.award;	coin += bettingAmount * award;	break;
-				case symbol.bell.idx:		award = symbol.bell.award;		coin += bettingAmount * award;	break;
-				case symbol.bar.idx:		award = symbol.bar.award;		coin += bettingAmount * award;	break;
-				case symbol.grape.idx:		award = symbol.grape.award;		coin += bettingAmount * award;	break;
-				case symbol.heart.idx:		award = symbol.heart.award;		coin += bettingAmount * award;	break;
-				case symbol.earth.idx:		award = symbol.earth.award;		coin += bettingAmount * award;	break;
-				case symbol.emerald.idx:	award = symbol.emerald.award;	coin += bettingAmount * award;	break;
-				case symbol.diamond.idx:	award = symbol.diamond.award;	coin += bettingAmount * award;	break;
-				case symbol.animal.idx:		award = symbol.animal.award;	coin += bettingAmount * award;	break;
+		//1.ONELINE SAME
+		if(slotResultList[0] == slotResultList[1]
+				&& slotResultList[1] == slotResultList[2]
+				&& slotResultList[2] == slotResultList[0] && !isWin
+			){
+			isWin = true;	effplayTime = 0;
+			//add coin
+			switch(slotResultList[0]){
+				case symbol.seven.n:	award =	symbol.seven.award;		coin += bettingAmount * award;	break;
+				case symbol.cherry.n:	award = symbol.cherry.award;	coin += bettingAmount * award;	break;
+				case symbol.bell.n:		award = symbol.bell.award;		coin += bettingAmount * award;	break;
+				case symbol.bar.n:		award = symbol.bar.award;		coin += bettingAmount * award;	break;
+				case symbol.grape.n:	award = symbol.grape.award;		coin += bettingAmount * award;	break;
+				case symbol.heart.n:	award = symbol.heart.award;		coin += bettingAmount * award;	break;
+				case symbol.earth.n:	award = symbol.earth.award;		coin += bettingAmount * award;	break;
+				case symbol.emerald.n:	award = symbol.emerald.award;	coin += bettingAmount * award;	break;
+				case symbol.diamond.n:	award = symbol.diamond.award;	coin += bettingAmount * award;	break;
+				case symbol.animal.n:	award = symbol.animal.award;	coin += bettingAmount * award;	break;
 			}
-			UI.coinTxt.text = `💰コイン：${coin}`;
-			UI.getCoinTxt.text = `${bettingAmount * award}円 習得 (X${award}倍)`;
 		}
-		else{
-			console.log("OMG....");
+		//2.ANY, CHERRY, CHERRY
+		else if(slotResultList[0]==symbol.cherry.n && slotResultList[1]==symbol.cherry.n
+				|| slotResultList[0]==symbol.cherry.n && slotResultList[2]==symbol.cherry.n 
+				|| slotResultList[1]==symbol.cherry.n && slotResultList[2]==symbol.cherry.n 
+			){
+			isWin = true;	effplayTime = 0;
+			award = 5;
+			coin += bettingAmount * award;
 		}
+		//3.SAME, SAME, CHERRY
+		else if(slotResultList[0]==symbol.cherry.n && slotResultList[1]==slotResultList[2]
+				|| slotResultList[1]==symbol.cherry.n && slotResultList[0]==slotResultList[2]
+				|| slotResultList[2]==symbol.cherry.n && slotResultList[0]==slotResultList[1]
+			){
+			isWin = true;	effplayTime = 0;
+			award = 2;
+			coin += bettingAmount * award;
+		}
+		//UI結果表示
+		UI.coinTxt.text = `💰コイン：${coin}`;
+		UI.getCoinTxt.text = `${bettingAmount * award}円 習得 (X${award}倍)`;
 	}
 }
 
@@ -381,7 +409,7 @@ function getRandomSymbol(){ //start 2「SEVEN」 , end -7「ANIMAL」
 	return (getRandomInt(-7, 2) * SYMBOL_WIDTH);
 }
 
-//calc
+//calc------------------------------------------------------------------------------------------
 function getRandomInt(min, max) {
 	min = Math.ceil(min);
 	max = Math.floor(max);
