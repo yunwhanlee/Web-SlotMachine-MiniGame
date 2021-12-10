@@ -94,23 +94,46 @@ const spr = {
 		anim: [PIXI.Texture.from('../img/slot-machineHandle_Idle.png'), PIXI.Texture.from('../img/slot-machineHandle_Pull.png')]
 	},
 	//multy
-	bettingBtnsTileSet: new PIXI.Texture.from('../img/button_TileSet.png').baseTexture.setSize(215,223),
+	bettingBtnsSheet: new PIXI.Texture.from('../img/button_TileSet.png').baseTexture.setSize(215,223),
+	foxSheet: new PIXI.Texture.from('../img/foxSheet64x64.png').baseTexture.setSize(896,448),
 };
 
 const btns = [{ 
-		obj: setrscFromTileSet("sprite",107,0,107,73, spr.bettingBtnsTileSet),//default
-		idle: setrscFromTileSet("texture",0,0,107,73, spr.bettingBtnsTileSet),
-		pushed: setrscFromTileSet("texture",107,0,107,73, spr.bettingBtnsTileSet)
+		obj: setrscFromTileSet("sprite",107,0,107,73, spr.bettingBtnsSheet),//default
+		idle: setrscFromTileSet("texture",0,0,107,73, spr.bettingBtnsSheet),
+		pushed: setrscFromTileSet("texture",107,0,107,73, spr.bettingBtnsSheet)
 	},{ 
-		obj: setrscFromTileSet("sprite",0,74,107,73, spr.bettingBtnsTileSet),
-		idle: setrscFromTileSet("texture",0,74,107,73, spr.bettingBtnsTileSet),
-		pushed: setrscFromTileSet("texture",107,74,107,73, spr.bettingBtnsTileSet)
+		obj: setrscFromTileSet("sprite",0,74,107,73, spr.bettingBtnsSheet),
+		idle: setrscFromTileSet("texture",0,74,107,73, spr.bettingBtnsSheet),
+		pushed: setrscFromTileSet("texture",107,74,107,73, spr.bettingBtnsSheet)
 	},{ 
-		obj: setrscFromTileSet("sprite",0,148,107,73, spr.bettingBtnsTileSet),
-		idle: setrscFromTileSet("texture",0,148,107,73, spr.bettingBtnsTileSet),
-		pushed: setrscFromTileSet("texture",107,148,107,73, spr.bettingBtnsTileSet)
+		obj: setrscFromTileSet("sprite",0,148,107,73, spr.bettingBtnsSheet),
+		idle: setrscFromTileSet("texture",0,148,107,73, spr.bettingBtnsSheet),
+		pushed: setrscFromTileSet("texture",107,148,107,73, spr.bettingBtnsSheet)
 	},
 ]
+
+const foxW = 64;
+const fox = {
+	obj : setrscFromTileSet("sprite",0,0,foxW,foxW, spr.foxSheet),//default,
+	idle: [
+		setrscFromTileSet("texture",0,0,foxW,foxW, spr.foxSheet),
+		setrscFromTileSet("texture",foxW*1,0,foxW,foxW, spr.foxSheet),
+		setrscFromTileSet("texture",foxW*2,0,foxW,foxW, spr.foxSheet),
+		setrscFromTileSet("texture",foxW*3,0,foxW,foxW, spr.foxSheet),
+		setrscFromTileSet("texture",foxW*4,0,foxW,foxW, spr.foxSheet),
+	],
+	run: [
+		setrscFromTileSet("texture",0,foxW*2,foxW,foxW, spr.foxSheet),
+		setrscFromTileSet("texture",foxW*1,foxW*2,foxW,foxW, spr.foxSheet),
+		setrscFromTileSet("texture",foxW*2,foxW*2,foxW,foxW, spr.foxSheet),
+		setrscFromTileSet("texture",foxW*3,foxW*2,foxW,foxW, spr.foxSheet),
+		setrscFromTileSet("texture",foxW*4,foxW*2,foxW,foxW, spr.foxSheet),
+		setrscFromTileSet("texture",foxW*5,foxW*2,foxW,foxW, spr.foxSheet),
+		setrscFromTileSet("texture",foxW*6,foxW*2,foxW,foxW, spr.foxSheet),
+		setrscFromTileSet("texture",foxW*7,foxW*2,foxW,foxW, spr.foxSheet),
+	]
+}
 
 function setrscFromTileSet(type,x,y,w,h,tileset){
 	const texture = new PIXI.Texture(tileset);
@@ -124,8 +147,29 @@ function setrscFromTileSet(type,x,y,w,h,tileset){
 	}
 }
 
+
 //##Render
 //--Sprite--
+//非同期
+PIXI.loader//BettingButtons
+	.add('../img/button_TileSet.png')
+	.load(()=>{
+	//betting btns
+	for(let i=0; i<btns.length;i++){
+		btns[i].obj.position.set(BettingBtns.posX[i],495);
+		app.stage.addChild(btns[i].obj);	
+	}
+
+	//fox Anim
+	fox.obj = new PIXI.AnimatedSprite(fox.run);
+	fox.obj.position.set(150,0);
+	fox.obj.animationSpeed = 0.2;
+	app.stage.addChild(fox.obj);
+	fox.obj.play();
+});
+
+
+
 //symbolsTileSet
 for(let i=0;i<3;i++){
 	app.stage.addChild(spr.slotSymbolTileSet[i]);
@@ -147,16 +191,7 @@ app.stage.addChild(spr.slotMachine);
 spr.slotHandle.obj.position.set(670,300);
 app.stage.addChild(spr.slotHandle.obj);
 
-//非同期
-PIXI.loader
-	.add('../img/button_TileSet.png')
-	.load(()=>{
-	//betting btns
-	for(let i=0; i<btns.length;i++){
-		btns[i].obj.position.set(BettingBtns.posX[i],495);
-		app.stage.addChild(btns[i].obj);	
-	}
-});
+
 
 //--UI--
 //Symbol Score Table
@@ -214,7 +249,7 @@ spr.slotHandle.obj.on("click", ()=> {
 		//スロットが全部止める前には、ハンドルコントロール禁止(BUG)
 		if(stopDelayTime <= stopSlotDelaySpan * 3) return;
 		//当たったら、日程時間(エフェクト再生)ハンドルコントール停止。
-		// if(isWin) return;
+		if(isWin) return;
 
 		isPullHandle = false;
 		spr.slotHandle.obj.texture = spr.slotHandle.anim[animEnum.handle.idle];
@@ -387,7 +422,7 @@ function result(){
 				|| slotResultList[1]==symbol.cherry.n && slotResultList[2]==symbol.cherry.n 
 			){
 			isWin = true;	effplayTime = 0;
-			award = 5;
+			award = 2;
 			coin += bettingAmount * award;
 		}
 		//3.SAME, SAME, CHERRY
@@ -396,7 +431,7 @@ function result(){
 				|| slotResultList[2]==symbol.cherry.n && slotResultList[0]==slotResultList[1]
 			){
 			isWin = true;	effplayTime = 0;
-			award = 2;
+			award = 5;
 			coin += bettingAmount * award;
 		}
 		//UI結果表示
