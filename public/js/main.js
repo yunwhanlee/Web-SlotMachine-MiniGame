@@ -292,7 +292,7 @@ app.stage.addChild(focusBettingTbBox);
 //Pull Handle
 spr.slotHandle.obj.interactive = true;
 spr.slotHandle.obj.buttonMode = true;
-spr.slotHandle.obj.on("click", ()=> {
+spr.slotHandle.obj.on("pointerdown", ()=> {
 	if(!isPullHandle){
 		if(coin < bettingAmount) {
 			alert("💰お金がないですね。さよなら"); 
@@ -329,7 +329,7 @@ btns.forEach((ele, idx, b) => {
 	console.log(ele);
 	ele.obj.interactive = true;
 	ele.obj.buttonMode = true;
-	ele.obj.on("click", (e)=>{
+	ele.obj.on("pointerdown", (e)=>{
 		if(!isPullHandle){
 			//名前で区切れないので、位置座標で分けました。
 			console.log(e.target.transform.position.x);

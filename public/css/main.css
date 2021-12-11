@@ -1,0 +1,11 @@
+body{
+    margin: 0;
+}
+
+@media screen and (max-width:480px) {
+    /* 모바일 */
+    canvas{
+        width: 370px;
+        height: 370px;
+    }
+}
